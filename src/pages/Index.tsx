@@ -1,16 +1,65 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import LandingScreen from "@/components/LandingScreen";
+import ChatScreen from "@/components/ChatScreen";
+import CertificateScreen from "@/components/CertificateScreen";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+type Screen = "landing" | "chat" | "result";
+
+interface ResultData {
+  name: string;
+  email: string;
+  area: string;
+  scores: Record<string, number>;
+}
+
+const Index = () => {
+  const [screen, setScreen] = useState<Screen>("landing");
+  const [resultData, setResultData] = useState<ResultData | null>(null);
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
-    </div>
+    <AnimatePresence mode="wait">
+      {screen === "landing" && (
+        <motion.div
+          key="landing"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <LandingScreen onStart={() => setScreen("chat")} />
+        </motion.div>
+      )}
+      {screen === "chat" && (
+        <motion.div
+          key="chat"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.4 }}
+          className="h-screen"
+        >
+          <ChatScreen
+            onComplete={(data) => {
+              setResultData(data);
+              setScreen("result");
+            }}
+          />
+        </motion.div>
+      )}
+      {screen === "result" && resultData && (
+        <motion.div
+          key="result"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <CertificateScreen {...resultData} />
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
