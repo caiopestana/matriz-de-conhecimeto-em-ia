@@ -4,6 +4,20 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .animate-black-gradient {
+    background: linear-gradient(-45deg, #000000, #0a0a0a, #141417, #050505);
+    background-size: 400% 400%;
+    animation: black-gradient-loop 15s ease infinite;
+  }
+}
+
+@keyframes black-gradient-loop {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 @layer base {
   :root {
     --background: 0 0% 10.6%;
@@ -82,5 +96,87 @@
 
   .glow-orange {
     box-shadow: 0 0 20px rgba(245, 130, 8, 0.3), 0 0 60px rgba(245, 130, 8, 0.1);
+  }
+
+  .dot-grid-bg {
+    position: relative;
+    background-image: radial-gradient(rgba(150, 150, 150, 0.15) 1px, transparent 1px);
+    background-size: 16px 16px;
+  }
+
+  .dot-grid-bg::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.6) 1.5px, transparent 1.5px);
+    background-size: 16px 16px;
+    -webkit-mask-image: radial-gradient(
+      250px circle at var(--mouseX, -1000px) var(--mouseY, -1000px),
+      black 0%,
+      transparent 100%
+    );
+    mask-image: radial-gradient(
+      250px circle at var(--mouseX, -1000px) var(--mouseY, -1000px),
+      black 0%,
+      transparent 100%
+    );
+    z-index: 0;
+  }
+
+  @property --border-angle {
+    syntax: "<angle>";
+    inherits: false;
+    initial-value: 0deg;
+  }
+
+  @keyframes border-glow-spin {
+    100% {
+      --border-angle: 360deg;
+    }
+  }
+
+  .orange-gradient-border {
+    position: relative;
+    border-radius: 9999px; /* perfect pill */
+    display: flex;
+    width: 100%;
+  }
+
+  .orange-gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.5px;
+    background: conic-gradient(
+      from var(--border-angle),
+      transparent 50%,
+      rgba(245, 130, 8, 0.2) 80%,
+      rgba(245, 130, 8, 1) 100%
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    z-index: 10;
+    animation: border-glow-spin 4s linear infinite;
+  }
+
+  .input-glass-dark {
+    position: relative;
+    /* Tinta cinza escuro (Graphite) com 60% de opacidade recria perfeitamente o tom escuro do painel por cima do preto. */
+    background: rgba(45, 45, 48, 0.6);
+    /* Blur necessário para espalhar os pontos do cenário e embaçá-los. */
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    z-index: 1;
+    border-radius: inherit;
+    border: none;
+    /* Linha branca super singela no topo pra selar aquele visual de recorte do screenshot */
+    box-shadow: 
+      inset 0 1px 1px rgba(255, 255, 255, 0.1),  
+      0 12px 32px rgba(0, 0, 0, 0.6);            
   }
 }

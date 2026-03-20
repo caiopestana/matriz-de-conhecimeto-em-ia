@@ -12,6 +12,7 @@ interface Message {
 interface Props {
   onComplete: (data: {
     name: string;
+    phone: string;
     email: string;
     area: string;
     scores: Record<string, number>;
@@ -20,6 +21,7 @@ interface Props {
 
 type Phase =
   | { type: "name" }
+  | { type: "phone" }
   | { type: "email" }
   | { type: "area" }
   | { type: "intro" }
@@ -27,15 +29,16 @@ type Phase =
   | { type: "done" };
 
 const totalSkillQuestions = skillQuestions.length;
-const totalSteps = 3 + totalSkillQuestions; // name, email, area + skills
+const totalSteps = 4 + totalSkillQuestions; // name, phone, email, area + skills
 
 const ChatScreen = ({ onComplete }: Props) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [phase, setPhase] = useState<Phase>({ type: "name" });
   const [inputValue, setInputValue] = useState("");
   const [showOptions, setShowOptions] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const [userData, setUserData] = useState({ name: "", email: "", area: "" });
+  const [userData, setUserData] = useState({ name: "", phone: "", email: "", area: "" });
   const [scores, setScores] = useState<Record<string, number>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -54,10 +57,12 @@ const ChatScreen = ({ onComplete }: Props) => {
   useEffect(() => {
     if (!initialized.current) {
       initialized.current = true;
+      setIsTyping(true);
       setTimeout(() => {
-        addBotMessage("Olá! Vamos começar. Qual é o seu nome?");
+        setIsTyping(false);
+        addBotMessage("Olá! Vamos começar. Qual é o seu nome completo?");
         setShowOptions(false);
-      }, 500);
+      }, 1200);
     }
   }, [addBotMessage]);
 
@@ -65,14 +70,22 @@ const ChatScreen = ({ onComplete }: Props) => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
     }
-  }, [messages, showOptions]);
+  }, [messages, showOptions, isTyping]);
 
   const advancePhase = useCallback(
     (nextPhase: Phase) => {
       setPhase(nextPhase);
       setShowOptions(false);
+      setIsTyping(true);
+      
+      const typingTime = 1000 + Math.random() * 500; // Tempo randômico de "pensamento"
+      
       setTimeout(() => {
+        setIsTyping(false);
         switch (nextPhase.type) {
+          case "phone":
+            addBotMessage("Qual é o seu telefone?");
+            break;
           case "email":
             addBotMessage("Qual é o seu e-mail?");
             break;
@@ -84,30 +97,30 @@ const ChatScreen = ({ onComplete }: Props) => {
             addBotMessage(
               "Agora vou te fazer algumas perguntas sobre como você usa IA no seu trabalho. Escolha a opção que melhor descreve você."
             );
+            
+            // Pausa um pouco antes de mostrar a primeira skill question
+            setIsTyping(true);
             setTimeout(() => {
+              setIsTyping(false);
               setPhase({ type: "skill", index: 0 });
-              setCurrentStep(3);
+              setCurrentStep(4);
               const q = skillQuestions[0];
-              setTimeout(() => {
-                addBotMessage(`${q.skill}: ${q.question}`);
-                setTimeout(() => setShowOptions(true), 400);
-              }, 600);
-            }, 1500);
+              addBotMessage(`${q.skill}: ${q.question}`);
+              setTimeout(() => setShowOptions(true), 400);
+            }, 2000);
             break;
           case "skill": {
             const idx = nextPhase.index;
             const q = skillQuestions[idx];
-            setCurrentStep(3 + idx);
-            setTimeout(() => {
-              addBotMessage(`${q.skill}: ${q.question}`);
-              setTimeout(() => setShowOptions(true), 400);
-            }, 600);
+            setCurrentStep(4 + idx);
+            addBotMessage(`${q.skill}: ${q.question}`);
+            setTimeout(() => setShowOptions(true), 400);
             break;
           }
           case "done":
             break;
         }
-      }, 400);
+      }, typingTime);
     },
     [addBotMessage]
   );
@@ -121,10 +134,14 @@ const ChatScreen = ({ onComplete }: Props) => {
     if (phase.type === "name") {
       setUserData((d) => ({ ...d, name: val }));
       setCurrentStep(1);
+      advancePhase({ type: "phone" });
+    } else if (phase.type === "phone") {
+      setUserData((d) => ({ ...d, phone: val }));
+      setCurrentStep(2);
       advancePhase({ type: "email" });
     } else if (phase.type === "email") {
       setUserData((d) => ({ ...d, email: val }));
-      setCurrentStep(2);
+      setCurrentStep(3);
       advancePhase({ type: "area" });
     }
   };
@@ -149,14 +166,21 @@ const ChatScreen = ({ onComplete }: Props) => {
     if (idx + 1 < totalSkillQuestions) {
       advancePhase({ type: "skill", index: idx + 1 });
     } else {
-      addBotMessage("Obrigado! Gerando seu certificado...");
+      setIsTyping(true);
       setTimeout(() => {
-        onComplete({ ...userData, scores: newScores });
+        setIsTyping(false);
+        addBotMessage("Analisando suas respostas e gerando seu diagnóstico completo...");
+        
+        setIsTyping(true);
+        setTimeout(() => {
+          setIsTyping(false);
+          onComplete({ ...userData, scores: newScores });
+        }, 2500);
       }, 1500);
     }
   };
 
-  const showTextInput = phase.type === "name" || phase.type === "email";
+  const showTextInput = phase.type === "name" || phase.type === "phone" || phase.type === "email";
   const progress = Math.round((currentStep / totalSteps) * 100);
 
   const currentOptions =
@@ -169,16 +193,34 @@ const ChatScreen = ({ onComplete }: Props) => {
         }))
       : [];
 
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const { currentTarget, clientX, clientY } = e;
+    const { left, top } = currentTarget.getBoundingClientRect();
+    currentTarget.style.setProperty("--mouseX", `${clientX - left}px`);
+    currentTarget.style.setProperty("--mouseY", `${clientY - top}px`);
+  };
+
   return (
-    <div className="flex flex-col h-screen">
+    <div 
+      className="flex flex-col h-screen dot-grid-bg bg-background/90"
+      onMouseMove={handleMouseMove}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 glass border-b border-border">
-        <span className="font-heading text-lg text-foreground">Matriz IA</span>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-muted-foreground">
+      <div className="relative z-10 flex items-center justify-between px-6 pb-20 pt-5 bg-gradient-to-b from-black/95 via-black/50 to-transparent">
+        <div className="flex items-center gap-4">
+          <a href="https://stackx.com.br" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 hover:opacity-80 transition-opacity drop-shadow-md">
+            <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center overflow-hidden border border-primary/50 p-0.5 shadow-lg">
+              <img src="/icone-stackx.svg.svg" alt="StackX" className="w-full h-full object-contain rounded-full" />
+            </div>
+            <span className="font-heading text-xl font-medium text-foreground">Matriz IA</span>
+          </a>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <span className="text-xs font-medium text-muted-foreground">
             {currentStep + 1}/{totalSteps}
           </span>
-          <div className="w-24 h-2 rounded-full bg-muted overflow-hidden">
+          <div className="w-48 sm:w-64 md:w-80 h-2.5 rounded-full bg-background overflow-hidden border border-white/5 shadow-inner hidden sm:block">
             <motion.div
               className="h-full rounded-full bg-primary"
               animate={{ width: `${progress}%` }}
@@ -189,7 +231,7 @@ const ChatScreen = ({ onComplete }: Props) => {
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+      <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto px-4 py-4 space-y-3 pb-24">
         <AnimatePresence initial={false}>
           {messages.map((msg) => (
             <motion.div
@@ -200,39 +242,61 @@ const ChatScreen = ({ onComplete }: Props) => {
               className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
             >
               {msg.sender === "bot" && (
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center mr-2 mt-1">
-                  <span className="text-primary-foreground font-heading text-sm">S</span>
+                <div className="flex-shrink-0 w-8 h-8 rounded-full glass bg-black/60 flex items-center justify-center mr-2 mt-1 overflow-hidden border border-white/20 p-0.5 shadow-lg">
+                  <img src="/icone-stackx.svg.svg" alt="StackX" className="w-full h-full object-contain rounded-full" />
                 </div>
               )}
               <div
-                className={`max-w-[85%] md:max-w-[70%] px-4 py-3 rounded-2xl text-sm ${
+                className={`max-w-[85%] md:max-w-[75%] px-5 py-3.5 rounded-2xl text-[15px] leading-relaxed shadow-sm ${
                   msg.sender === "user"
-                    ? "bg-primary text-primary-foreground rounded-br-md"
-                    : "glass text-foreground rounded-bl-md"
+                    ? "bg-primary text-black font-medium rounded-br-sm glow-orange-sm"
+                    : "glass !bg-zinc-900/80 text-zinc-100 rounded-bl-sm border-white/5"
                 }`}
               >
                 {msg.text}
               </div>
             </motion.div>
           ))}
+          
+          {/* Typing Indicator */}
+          {isTyping && (
+            <motion.div
+              key="typing-indicator"
+              initial={{ opacity: 0, scale: 0.9, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 10 }}
+              transition={{ duration: 0.2 }}
+              className="flex justify-start items-center"
+            >
+              <div className="flex-shrink-0 w-8 h-8 rounded-full glass bg-black/60 flex items-center justify-center mr-2 mt-1 overflow-hidden border border-white/20 p-0.5 shadow-lg">
+                <img src="/icone-stackx.svg.svg" alt="StackX" className="w-full h-full object-contain rounded-full" />
+              </div>
+              <div className="glass !bg-zinc-900/80 rounded-2xl rounded-bl-sm px-5 py-4 border-white/5 flex items-center gap-1.5 h-[46px] ml-1 shadow-sm">
+                <motion.div className="w-2 h-2 rounded-full bg-primary/80" animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.8, ease: "easeInOut", delay: 0 }} />
+                <motion.div className="w-2 h-2 rounded-full bg-primary/80" animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.8, ease: "easeInOut", delay: 0.2 }} />
+                <motion.div className="w-2 h-2 rounded-full bg-primary/80" animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.8, ease: "easeInOut", delay: 0.4 }} />
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
 
         {/* Options */}
         <AnimatePresence>
-          {showOptions && currentOptions.length > 0 && (
+          {showOptions && currentOptions.length > 0 && !isTyping && (
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              className="flex flex-wrap gap-2 pl-10"
+              className="flex flex-col sm:flex-row sm:flex-wrap gap-2.5 sm:pl-10 mt-2"
             >
               {currentOptions.map((opt, i) => (
                 <motion.button
                   key={i}
                   onClick={opt.action}
-                  className="glass px-4 py-2 rounded-xl text-sm text-foreground hover:border-primary/40 transition-all text-left"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
+                  className="w-full sm:w-auto glass !bg-black/70 px-5 py-3.5 rounded-xl text-[15px] font-medium text-zinc-200 !border-white/10 hover:!border-primary/60 focus-visible:!border-primary hover:!bg-black/90 hover:shadow-[0_0_20px_rgba(245,124,0,0.25)] transition-all duration-300 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-lg"
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                  aria-label={`Selecionar opção: ${opt.label}`}
                 >
                   {opt.label}
                 </motion.button>
@@ -244,23 +308,41 @@ const ChatScreen = ({ onComplete }: Props) => {
 
       {/* Input */}
       {showTextInput && (
-        <div className="px-4 py-3 glass border-t border-border">
-          <div className="flex gap-2">
-            <input
-              ref={inputRef}
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleTextSubmit()}
-              placeholder={phase.type === "name" ? "Seu nome..." : "Seu e-mail..."}
-              className="flex-1 bg-muted rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-              autoFocus
-            />
-            <button
-              onClick={handleTextSubmit}
-              className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center text-primary-foreground hover:scale-105 active:scale-95 transition-transform"
-            >
-              <Send size={18} />
-            </button>
+        <div className="relative z-10 w-full px-4 sm:px-6 pb-6 sm:pb-8 max-w-4xl mx-auto flex-shrink-0">
+          <div className="orange-gradient-border shadow-2xl">
+            <div className="w-full flex items-center input-glass-dark transition-all py-2 pl-6 pr-2">
+              <input
+                ref={inputRef}
+                value={inputValue}
+                onChange={(e) => {
+                  let val = e.target.value;
+                  if (phase.type === "phone") {
+                    val = val.replace(/\D/g, "");
+                    if (val.length > 2) val = val.replace(/^(\d{2})/, "($1) ");
+                    if (val.length > 7) val = val.replace(/(\(\d{2}\) )(\d)/, "$1$2 ");
+                    if (val.length > 12) val = val.replace(/(\(\d{2}\) \d \d{4})(\d)/, "$1-$2");
+                    val = val.slice(0, 16);
+                  }
+                  setInputValue(val);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !isTyping) handleTextSubmit()
+                }}
+                placeholder={phase.type === "name" ? "Seu nome completo..." : phase.type === "phone" ? "(11) 9 0000-0000" : "Seu e-mail..."}
+                className="flex-1 bg-transparent text-[16px] md:text-lg text-white placeholder:text-zinc-500 outline-none py-1.5 font-medium"
+                autoFocus
+                disabled={isTyping}
+                aria-label={phase.type === "name" ? "Digite seu nome completo" : phase.type === "phone" ? "Digite seu telefone" : "Digite seu email"}
+              />
+              <button
+                onClick={handleTextSubmit}
+                disabled={isTyping}
+                className="w-12 h-12 ml-3 flex-shrink-0 rounded-full bg-primary flex items-center justify-center text-black hover:bg-primary/90 hover:shadow-[0_0_15px_rgba(245,124,0,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:ring-primary hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:pointer-events-none"
+                aria-label="Enviar mensagem"
+              >
+                <Send size={20} className="-ml-0.5" />
+              </button>
+            </div>
           </div>
         </div>
       )}
