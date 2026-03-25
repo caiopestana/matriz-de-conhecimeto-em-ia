@@ -124,6 +124,57 @@
     z-index: 0;
   }
 
+  @property --light-x {
+    syntax: "<length-percentage>";
+    inherits: false;
+    initial-value: 50%;
+  }
+
+  @property --light-y {
+    syntax: "<length-percentage>";
+    inherits: false;
+    initial-value: 0%;
+  }
+
+  @keyframes mobile-light-wander {
+    0% {
+      --light-x: 10%;
+      --light-y: 10%;
+    }
+    25% {
+      --light-x: 90%;
+      --light-y: 30%;
+    }
+    50% {
+      --light-x: 80%;
+      --light-y: 80%;
+    }
+    75% {
+      --light-x: 20%;
+      --light-y: 60%;
+    }
+    100% {
+      --light-x: 10%;
+      --light-y: 10%;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .dot-grid-bg::before {
+      animation: mobile-light-wander 6s ease-in-out infinite;
+      -webkit-mask-image: radial-gradient(
+        350px circle at var(--light-x) var(--light-y),
+        black 0%,
+        transparent 100%
+      );
+      mask-image: radial-gradient(
+        350px circle at var(--light-x) var(--light-y),
+        black 0%,
+        transparent 100%
+      );
+    }
+  }
+
   @property --border-angle {
     syntax: "<angle>";
     inherits: false;

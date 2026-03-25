@@ -309,8 +309,8 @@ const ChatScreen = ({ onComplete }: Props) => {
       {/* Input */}
       {showTextInput && (
         <div className="relative z-10 w-full px-4 sm:px-6 pb-6 sm:pb-8 max-w-4xl mx-auto flex-shrink-0">
-          <div className="orange-gradient-border shadow-2xl">
-            <div className="w-full flex items-center input-glass-dark transition-all py-2 pl-6 pr-2">
+          <div className="orange-gradient-border shadow-2xl relative rounded-full">
+            <div className="w-full flex items-center relative input-glass-dark transition-all py-2 pl-6 pr-14 sm:pr-16">
               <input
                 ref={inputRef}
                 value={inputValue}
@@ -329,7 +329,7 @@ const ChatScreen = ({ onComplete }: Props) => {
                   if (e.key === "Enter" && !isTyping) handleTextSubmit()
                 }}
                 placeholder={phase.type === "name" ? "Seu nome completo..." : phase.type === "phone" ? "(11) 9 0000-0000" : "Seu e-mail..."}
-                className="flex-1 bg-transparent text-[16px] md:text-lg text-white placeholder:text-zinc-500 outline-none py-1.5 font-medium"
+                className="w-full bg-transparent text-[16px] md:text-lg text-white placeholder:text-zinc-500 outline-none py-1.5 font-medium"
                 autoFocus
                 disabled={isTyping}
                 aria-label={phase.type === "name" ? "Digite seu nome completo" : phase.type === "phone" ? "Digite seu telefone" : "Digite seu email"}
@@ -337,10 +337,11 @@ const ChatScreen = ({ onComplete }: Props) => {
               <button
                 onClick={handleTextSubmit}
                 disabled={isTyping}
-                className="w-12 h-12 ml-3 flex-shrink-0 rounded-full bg-primary flex items-center justify-center text-black hover:bg-primary/90 hover:shadow-[0_0_15px_rgba(245,124,0,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:ring-primary hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:pointer-events-none"
+                className="absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 rounded-full bg-primary flex items-center justify-center text-black hover:bg-primary/90 hover:shadow-[0_0_15px_rgba(245,124,0,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:ring-primary hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:pointer-events-none"
                 aria-label="Enviar mensagem"
               >
-                <Send size={20} className="-ml-0.5" />
+                <Send size={18} className="-ml-0.5 sm:hidden" />
+                <Send size={20} className="-ml-0.5 hidden sm:block" />
               </button>
             </div>
           </div>

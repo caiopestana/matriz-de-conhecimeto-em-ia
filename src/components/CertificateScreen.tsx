@@ -153,9 +153,15 @@ const CertificateScreen = ({ name, scores }: Props) => {
               background: "linear-gradient(135deg, rgba(20,20,20,1) 0%, rgba(10,10,10,1) 100%)"
             }}
           >
-            {/* Decorações do background */}
-            <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[70%] bg-primary/20 blur-[130px] rounded-full pointer-events-none" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[60%] bg-primary/10 blur-[110px] rounded-full pointer-events-none" />
+            {/* Decorações do background - Dot Grid */}
+            <div 
+              className="absolute inset-0 pointer-events-none" 
+              style={{
+                backgroundImage: 'radial-gradient(rgba(200, 200, 200, 0.5) 1px, transparent 1px)',
+                backgroundSize: '24px 24px',
+                opacity: 0.08
+              }}
+            />
 
             {/* Header: Titulo e Logo */}
             <div className="flex justify-between items-start z-10 w-full relative">
